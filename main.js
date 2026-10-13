@@ -34,7 +34,6 @@
     document.querySelector('meta[name="description"]').content = meta[lang].desc;
     document.querySelectorAll('.lang-btn').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.lang === lang)); });
     try { localStorage.setItem('kh-lang', lang); } catch (e) {}
-    if (lastMail) buildMail();
   }
   document.querySelectorAll('.lang-btn').forEach(function (b) {
     b.addEventListener('click', function () { setLang(b.dataset.lang); });
@@ -64,115 +63,28 @@
     reveals.forEach(function (el) { el.classList.add('in'); });
   }
 
-  /* ---------- Booking request -> mailto (never auto-sent) ---------- */
-  var form = document.getElementById('booking');
-  var arr = document.getElementById('arrivee');
-  var dep = document.getElementById('depart');
-  var gite = document.getElementById('gite');
-  var adults = document.getElementById('adultes');
-  var kids = document.getElementById('enfants');
-  var nom = document.getElementById('nom');
-  var msg = document.getElementById('message');
-  var err = document.getElementById('form-error');
-  var preview = document.getElementById('mail-preview');
-  var pre = document.getElementById('mail-text');
-  var link = document.getElementById('mail-link');
-  var lastMail = false;
-
-  function iso(d) { return d.toISOString().slice(0, 10); }
-  var today = new Date(); today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
-  arr.min = iso(today); dep.min = iso(today);
-  arr.addEventListener('change', function () {
-    if (arr.value) {
-      var d = new Date(arr.value); d.setDate(d.getDate() + 1); dep.min = iso(d);
-      if (dep.value && dep.value <= arr.value) dep.value = '';
-    }
-  });
-
-  document.querySelectorAll('[data-gite]').forEach(function (a) {
-    a.addEventListener('click', function () { gite.value = a.dataset.gite; });
-  });
-
-  var T = {
-    fr: {
-      missingDates: 'Merci d’indiquer vos dates d’arrivée et de départ.',
-      order: 'La date de départ doit être après la date d’arrivée.',
-      past: 'La date d’arrivée est déjà passée.',
-      tooMany: function (n, cap, name) { return n + ' personnes : la capacité de ' + name + ' est de ' + cap + ' personnes maximum.'; },
-      adults: 'Merci d’indiquer au moins 1 adulte.',
-      subject: function (name, a, d) { return 'Demande de disponibilité – ' + name + ' – du ' + a + ' au ' + d; },
-      body: function (o) {
-        return 'Bonjour Cindy et Eddy,\n\n' +
-          'Je souhaiterais connaître vos disponibilités et vos tarifs pour :\n\n' +
-          '• Gîte : ' + o.name + '\n' +
-          '• Arrivée : ' + o.a + '\n' +
-          '• Départ : ' + o.d + ' (' + o.nights + ' nuit' + (o.nights > 1 ? 's' : '') + ')\n' +
-          '• Voyageurs : ' + o.ad + ' adulte' + (o.ad > 1 ? 's' : '') + (o.ki ? ', ' + o.ki + ' enfant' + (o.ki > 1 ? 's' : '') : '') + '\n' +
-          (o.msg ? '\n' + o.msg + '\n' : '') +
-          '\nMerci d’avance,\n' + (o.nom || '');
-      },
-      locale: 'fr-FR'
-    },
-    en: {
-      missingDates: 'Please enter your arrival and departure dates.',
-      order: 'Departure must be after arrival.',
-      past: 'The arrival date is in the past.',
-      tooMany: function (n, cap, name) { return n + ' guests: ' + name + ' sleeps ' + cap + ' guests maximum.'; },
-      adults: 'Please enter at least 1 adult.',
-      subject: function (name, a, d) { return 'Availability request – ' + name + ' – ' + a + ' to ' + d; },
-      body: function (o) {
-        return 'Hello Cindy and Eddy,\n\n' +
-          'I would like to know your availability and rates for:\n\n' +
-          '• Cottage: ' + o.name + '\n' +
-          '• Arrival: ' + o.a + '\n' +
-          '• Departure: ' + o.d + ' (' + o.nights + ' night' + (o.nights > 1 ? 's' : '') + ')\n' +
-          '• Guests: ' + o.ad + ' adult' + (o.ad > 1 ? 's' : '') + (o.ki ? ', ' + o.ki + ' child' + (o.ki > 1 ? 'ren' : '') : '') + '\n' +
-          (o.msg ? '\n' + o.msg + '\n' : '') +
-          '\nThank you,\n' + (o.nom || '');
-      },
-      locale: 'en-GB'
-    }
+  /* ---------- Group request (DEMO: no network call) ---------- */
+  var gf = document.getElementById('group-form');
+  var gErr = document.getElementById('g-error');
+  var gOk = document.getElementById('g-ok');
+  var gIds = ['g-nom', 'g-email', 'g-type', 'g-arrivee', 'g-depart', 'g-nb'];
+  var GT = {
+    fr: { req: 'Merci de remplir les champs obligatoires (*).', email: 'Adresse e-mail invalide.', order: 'La date de départ doit être après la date d’arrivée.', nb: 'Nombre de personnes : entre 1 et 20.',
+      ok: 'Démonstration : rien n’a été envoyé. Sur le site final, cette demande serait transmise directement à Cindy & Eddy, les propriétaires.' },
+    en: { req: 'Please fill in the required fields (*).', email: 'Invalid email address.', order: 'Departure must be after arrival.', nb: 'Number of guests: between 1 and 20.',
+      ok: 'Demo: nothing has been sent. On the live site, this request would go straight to Cindy & Eddy, the owners.' }
   };
-
-  function fmt(v) {
-    var p = v.split('-');
-    return new Date(+p[0], +p[1] - 1, +p[2]).toLocaleDateString(T[lang].locale, { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' });
-  }
-  function fail(m, field) {
-    err.textContent = m; preview.hidden = true; lastMail = false;
-    if (field) { field.setAttribute('aria-invalid', 'true'); field.focus(); }
-    return false;
-  }
-  function buildMail() {
-    var t = T[lang];
-    [arr, dep, adults].forEach(function (f) { f.removeAttribute('aria-invalid'); });
-    err.textContent = '';
-    if (!arr.value || !dep.value) return fail(t.missingDates, !arr.value ? arr : dep);
-    if (arr.value < arr.min) return fail(t.past, arr);
-    if (dep.value <= arr.value) return fail(t.order, dep);
-    var ad = parseInt(adults.value, 10) || 0, ki = parseInt(kids.value, 10) || 0;
-    if (ad < 1) return fail(t.adults, adults);
-    var opt = gite.options[gite.selectedIndex];
-    var cap = parseInt(opt.dataset.cap, 10);
-    var name = opt.textContent.replace(/\s*\(.*\)\s*$/, '');
-    if (ad + ki > cap) return fail(t.tooMany(ad + ki, cap, name), adults);
-    var nights = Math.round((new Date(dep.value) - new Date(arr.value)) / 864e5);
-    var o = { name: name, a: fmt(arr.value), d: fmt(dep.value), nights: nights, ad: ad, ki: ki, msg: msg.value.trim(), nom: nom.value.trim() };
-    var subject = t.subject(name, o.a, o.d);
-    var body = t.body(o);
-    pre.textContent = 'À / To : ' + EMAIL + '\nObjet / Subject : ' + subject + '\n\n' + body;
-    link.href = 'mailto:' + EMAIL + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
-    preview.hidden = false; lastMail = true;
-    return true;
-  }
-  /* Submitting only builds a preview + link. Nothing is sent and nothing opens automatically:
-     the visitor must click "Ouvrir dans ma messagerie" and then send from their own mail app. */
-  form.addEventListener('submit', function (e) {
+  function gFail(m, f) { gErr.textContent = m; gOk.hidden = true; f.setAttribute('aria-invalid', 'true'); f.focus(); }
+  gf.addEventListener('submit', function (e) {
     e.preventDefault();
-    if (buildMail()) pre.focus();
-  });
-  [arr, dep, gite, adults, kids, nom, msg].forEach(function (f) {
-    f.addEventListener('change', function () { if (lastMail) buildMail(); });
+    var t = GT[lang]; gErr.textContent = '';
+    var f = gIds.map(function (id) { var el = document.getElementById(id); el.removeAttribute('aria-invalid'); return el; });
+    for (var i = 0; i < f.length; i++) if (!f[i].value.trim()) return gFail(t.req, f[i]);
+    if (!f[1].checkValidity()) return gFail(t.email, f[1]);
+    if (f[4].value <= f[3].value) return gFail(t.order, f[4]);
+    var n = parseInt(f[5].value, 10);
+    if (!(n >= 1 && n <= 20)) return gFail(t.nb, f[5]);
+    gOk.textContent = t.ok; gOk.hidden = false; gOk.focus();
   });
 
   /* ---------- init ---------- */

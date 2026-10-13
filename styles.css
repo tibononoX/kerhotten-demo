@@ -190,7 +190,6 @@ p{margin:0 0 1em}
 /* Réserver */
 .reserver{background:#fbf8f2}
 .reserver-grid{display:grid;gap:2.5rem}
-.calendar-placeholder{border:1px dashed #b39762;background:repeating-linear-gradient(-45deg,#f6efdf,#f6efdf 10px,#f1e7d1 10px,#f1e7d1 20px);border-radius:var(--radius);padding:1.2rem 1.3rem;margin:1.6rem 0;font-size:.95rem;color:#4a3c22}
 .placeholder-tag{font-size:.7rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;margin-bottom:.4rem;color:#7a5b22}
 .booking{background:#fff;border:1px solid rgba(75,82,87,.14);border-radius:8px;padding:clamp(1.3rem,3vw,2.2rem);box-shadow:0 30px 60px -40px rgba(20,50,58,.35)}
 .field{display:flex;flex-direction:column;margin-bottom:1.1rem;min-width:0}
@@ -248,3 +247,15 @@ a.contact-card:hover{background:rgba(255,255,255,.07)}
 /* the font shorthand resets numeric variants: restore lining figures on serif numbers */
 .d-time,.facts strong,.gite-specs dd,.cc-value,.mosaic figcaption strong,.hero-title{font-variant-numeric:lining-nums}
 
+.vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.book-links{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1rem}
+.book-links .btn::after{content:"↗";font-size:.85em}
+.book-links .btn[href^="#"]::after{content:none}
+.where-list{list-style:none;padding:0;margin:2rem 0;display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.where-card{background:#fff;border:1px solid rgba(75,82,87,.14);border-radius:8px;padding:1.3rem}
+.where-card h3{font-size:1.6rem;margin:0}
+.where-card .gite-en{display:block;margin-top:.3rem}
+.group-wrap{margin-top:clamp(2.5rem,6vw,4rem);max-width:820px;scroll-margin-top:5rem}
+.group-form{color:var(--ink)}
+.group-form h3{font-size:1.9rem}
+.form-ok{background:#e6f0ea;border:1px solid #6d9a7c;color:#1d4a2c;border-radius:var(--radius);padding:1rem;margin:1rem 0 0}
